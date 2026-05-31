@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Glowing Heart - Perfect Animation</title>
+    <title>TikTok Trend - Special For You</title>
     <style>
         body {
             margin: 0;
@@ -38,7 +38,7 @@
             z-index: 1;
         }
 
-        /* 👑 TEKS "MY LOVE" - AWALNYA TERSEMBUNYI (OPACITY 0 & SCALE 0) */
+        /* Teks "My Love" utama di tengah */
         .teks-utama {
             position: absolute;
             z-index: 5;
@@ -54,29 +54,83 @@
             transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
         }
 
-        /* Efek kelas aktif saat layar mulai diketuk */
         .teks-utama.aktif {
             opacity: 1;
             transform: scale(1);
             animation: nafasHalus 2s infinite ease-in-out alternate;
         }
 
-        @keyframes nafasHalus {
-            0% { transform: scale(0.96); }
-            100% { transform: scale(1.04); }
+        /* ✉️ Kotak Pesan Kejutan / Surat Cinta khas @fenidev */
+        .kotak-pesan {
+            position: absolute;
+            z-index: 20;
+            background: rgba(20, 20, 20, 0.85);
+            border: 2px solid #ff2d55;
+            box-shadow: 0 0 25px rgba(255, 45, 85, 0.6);
+            border-radius: 15px;
+            padding: 30px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            color: white;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: scale(0.5) translateY(50px);
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+
+        .kotak-pesan.muncul {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+
+        .kotak-pesan h2 {
+            margin-top: 0;
+            color: #ff6b8b;
+            text-shadow: 0 0 10px #ff2d55;
+        }
+
+        .kotak-pesan p {
+            line-height: 1.6;
+            font-size: 1.1rem;
+            color: #eee;
+        }
+
+        .tombol-tutup {
+            background: #ff2d55;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 0 0 10px #ff2d55;
+            transition: transform 0.2s;
+        }
+
+        .tombol-tutup:hover {
+            transform: scale(1.1);
         }
 
         .petunjuk {
             position: absolute;
             bottom: 30px;
             color: #666;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: bold;
             letter-spacing: 1px;
             animation: berkedipSmooth 1.5s infinite ease-in-out alternate;
             pointer-events: none;
             z-index: 10;
             text-shadow: 0 0 10px rgba(255, 45, 85, 0.3);
+        }
+
+        @keyframes nafasHalus {
+            0% { transform: scale(0.96); }
+            100% { transform: scale(1.04); }
         }
 
         @keyframes berkedipSmooth {
@@ -90,7 +144,14 @@
     <div class="container">
         <canvas id="canvasSistem"></canvas>
         <div id="textMyLove" class="teks-utama">My Love</div>
-        <div id="petunjukTeks" class="petunjuk">Ketuk Layar di Sini...</div>
+        
+        <div id="kotakPesan" class="kotak-pesan">
+            <h2>Hai Ndut! ❤️</h2>
+            <p>Aku cuma mau bilang makasih ya udah selalu ada. Tetap sama aku terus ya, jangan bosen-bosen! You are the best thing that ever happened to me. ✨</p>
+            <button class="tombol-tutup" onclick="tutupPesan(event)">Close ❤️</button>
+        </div>
+
+        <div id="petunjukTeks" class="petunjuk">Ketuk Layar Beberapa Kali...</div>
     </div>
 
     <script>
@@ -98,6 +159,7 @@
         const ctx = canvas.getContext('2d');
         const textMyLove = document.getElementById('textMyLove');
         const petunjukTeks = document.getElementById('petunjukTeks');
+        const kotakPesan = document.getElementById('kotakPesan');
 
         function aturUkuran() {
             canvas.width = window.innerWidth;
@@ -110,41 +172,33 @@
         let waktuLove = 0;
         let sedangDitekan = false;
         let koordinatTekan = { x: 0, y: 0 };
-        let pertamaKaliKetuk = false;
+        let jumlahKlik = 0;
+        let pesanSudahMuncul = false;
 
         class KupuKupu {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                
                 const sudutAcak = Math.random() * Math.PI * 2;
-                // ⚡ KECEPATAN AWAL DIPERCEPAT (Dari 4-10 menjadi 6-13)
                 const kecepatanAwal = 6 + Math.random() * 7;
                 
                 this.kecepatanX = Math.cos(sudutAcak) * kecepatanAwal;
                 this.kecepatanY = Math.sin(sudutAcak) * kecepatanAwal;
-                
-                // Gesekan disesuaikan agar tetap meluncur cepat
                 this.gesekan = 0.97; 
                 this.dayaApung = -0.06; 
-
                 this.ukuran = 12 + Math.random() * 14; 
                 this.sisaUmur = 1.0;
-                // Pudar sedikit dipercepat menyesuaikan gerakannya yang gesit
                 this.kecepatanPudar = 0.012 + Math.random() * 0.015;
-                
                 this.kepakan = Math.random() * 100;
-                this.kecepatanKepak = 0.25 + Math.random() * 0.2; // Kepakan sayap lebih cepat
+                this.kecepatanKepak = 0.25 + Math.random() * 0.2;
             }
 
             update() {
                 this.kecepatanX *= this.gesekan;
                 this.kecepatanY *= this.gesekan;
                 this.kecepatanY += this.dayaApung;
-
                 this.x += this.kecepatanX;
                 this.y += this.kecepatanY;
-                
                 this.sisaUmur -= this.kecepatanPudar;
                 this.kepakan += this.kecepatanKepak;
             }
@@ -154,16 +208,13 @@
                 ctx.globalAlpha = this.sisaUmur;
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = '#ff2d55';
-                
                 ctx.translate(this.x, this.y);
                 const efekKepak = Math.cos(this.kepakan) * 0.5 + 0.7;
                 ctx.scale(efekKepak, 1.0); 
-
                 ctx.font = `${this.ukuran}px Arial`;
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillText("🦋", 0, 0);
-                
                 ctx.restore();
             }
         }
@@ -175,12 +226,10 @@
         }
 
         function jalankanSistem() {
-            // ❌ BAYANG-BAYANG DIHILANGKAN: Menggunakan clearRect murni agar layar bersih tanpa sisa ekor shadow
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const pusatX = canvas.width / 2;
             const pusatY = canvas.height / 2;
-
             const skalaLove = 15 + Math.sin(waktuLove) * 0.4;
             waktuLove += 0.03;
 
@@ -203,7 +252,7 @@
             ctx.stroke();
             ctx.restore();
 
-            if (sedangDitekan) {
+            if (sedangDitekan && !pesanSudahMuncul) {
                 for(let i = 0; i < 3; i++) { 
                     daftarKupuKupu.push(new KupuKupu(koordinatTekan.x, koordinatTekan.y));
                 }
@@ -213,53 +262,52 @@
                 let kupu = daftarKupuKupu[i];
                 kupu.update();
                 kupu.draw();
-
-                if (kupu.sisaUmur <= 0) {
-                    daftarKupuKupu.splice(i, 1);
-                }
+                if (kupu.sisaUmur <= 0) daftarKupuKupu.splice(i, 1);
             }
 
             requestAnimationFrame(jalankanSistem);
         }
 
-        // --- MANAJEMEN EVENT UNTUK MEMUNCUKKAN TEKS & KUPU-KUPU ---
         function aksiSentuhDimulai(x, y) {
+            if (pesanSudahMuncul) return;
+
             sedangDitekan = true;
             koordinatTekan.x = x;
             koordinatTekan.y = y;
+            jumlahKlik++;
 
-            // Memunculkan nama saat pertama kali layar tersentuh
-            if (!pertamaKaliKetuk) {
-                pertamaKaliKetuk = true;
+            // Munculkan teks My Love pada klik pertama
+            if (jumlahKlik === 1) {
                 textMyLove.classList.add('aktif');
-                petunjukTeks.style.display = 'none'; // Sembunyikan petunjuk bawah
+                petunjukTeks.innerText = "Ketuk terus sampai surat terbuka...";
+            }
+
+            // Memicu munculnya surat cinta setelah klik ke-10 (khas interaktif ala @fenidev)
+            if (jumlahKlik >= 10 && !pesanSudahMuncul) {
+                pesanSudahMuncul = true;
+                sedangDitekan = false;
+                kotakPesan.classList.add('muncul');
+                petunjukTeks.style.display = 'none';
             }
         }
 
-        window.addEventListener('mousedown', function(e) {
-            aksiSentuhDimulai(e.clientX, e.clientY);
-        });
+        function tutupPesan(event) {
+            event.stopPropagation(); // Biar klik tombol close ga memicu deteksi klik layar lagi
+            kotakPesan.classList.remove('muncul');
+            setTimeout(() => {
+                pesanSudahMuncul = false;
+                jumlahKlik = 0;
+                petunjukTeks.style.display = 'block';
+                petunjukTeks.innerText = "Ketuk Layar di Sini...";
+            }, 800);
+        }
 
-        window.addEventListener('mousemove', function(e) {
-            if (sedangDitekan) {
-                koordinatTekan.x = e.clientX;
-                koordinatTekan.y = e.clientY;
-            }
-        });
-
+        // --- EVENTS LISTENER ---
+        window.addEventListener('mousedown', (e) => aksiSentuhDimulai(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => { if (sedangDitekan) { koordinatTekan.x = e.clientX; koordinatTekan.y = e.clientY; } });
         window.addEventListener('mouseup', () => sedangDitekan = false);
-
-        window.addEventListener('touchstart', function(e) {
-            aksiSentuhDimulai(e.touches[0].clientX, e.touches[0].clientY);
-        });
-        
-        window.addEventListener('touchmove', function(e) {
-            if (sedangDitekan) {
-                koordinatTekan.x = e.touches[0].clientX;
-                koordinatTekan.y = e.touches[0].clientY;
-            }
-        });
-        
+        window.addEventListener('touchstart', (e) => aksiSentuhDimulai(e.touches[0].clientX, e.touches[0].clientY));
+        window.addEventListener('touchmove', (e) => { if (sedangDitekan) { koordinatTekan.x = e.touches[0].clientX; koordinatTekan.y = e.touches[0].clientY; } });
         window.addEventListener('touchend', () => sedangDitekan = false);
 
         jalankanSistem();
